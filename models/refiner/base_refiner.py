@@ -11,7 +11,7 @@ from kornia.augmentation import AugmentationSequential
 from .builder import REFINERS
 from ..encoder import build_encoder
 from ..decoder import build_decoder
-from ..utils import Renderer, build_augmentation, get_flow_from_delta_pose_and_depth, filter_flow_by_mask, cal_epe
+from ..utils import Renderer, get_flow_from_delta_pose_and_depth, filter_flow_by_mask, cal_epe
 from ..utils.utils import simple_forward_warp, tensor_image_to_cv2, Warp
 
 @REFINERS.register_module()
