@@ -8,10 +8,47 @@ from mmcv.utils import print_log
 from torch.utils.data import Dataset
 from terminaltables import AsciiTable
 from .pipelines import Compose
+from .builder import build_dataset, DATASETS
 from .pose import project_3d_point
 from .utils import dumps_json
 
+@DATASETS.register_module()
+class ConcatDataset(Dataset):
+    def __init__(self, dataset_configs, ratios=None):
+        super().__init__()
+        self.datasets = [build_dataset(cfg) for cfg in dataset_configs]
+        class_names = self.datasets[0].class_names
+        assert [class_names == dataset.class_names for dataset in self.datasets]
+        self.class_names = self.datasets[0].class_names
+        self.meshes = self.datasets[0].meshes
+        self.ratios = ratios
+        if self.ratios is None:
+            self.ratios = [1.0 for _ in range(len(self.datasets))]
+        assert len(self.ratios) == len(self.datasets)
 
+        self.dataset_length = []
+        for s, r in zip(self.datasets, self.ratios):
+            self.dataset_length.append(int(len(s) * r))
+    
+    def __len__(self):
+        return sum(self.dataset_length)
+    
+    def __repr__(self) -> str:
+        s = self.__class__.__name__ + '('
+        s += f"image_num:{len(self)}, " 
+        s += f"contains dataset:{self.datasets}, "
+        s += f"datasets ratio:{self.ratios}, "
+        s += f"mixed_datset_length:{self.dataset_length} "
+        return s
+    
+    def __getitem__(self, index):
+        new_index = index % len(self)
+        for i, dataset in enumerate(self.datasets):
+            if new_index < self.dataset_length[i]:
+                new_index = new_index % len(dataset)
+                return dataset[new_index]
+            else:
+                new_index -= self.dataset_length[i]
 class BaseDataset(Dataset):
     def __init__(self,
                 data_root: str,

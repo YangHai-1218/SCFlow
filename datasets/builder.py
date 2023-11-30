@@ -3,7 +3,6 @@ from torch.utils.data import ConcatDataset
 
 DATASETS = Registry('dataset')
 PIPELINES = Registry('pipeline')
-DATASETS.register_module(name='ConcatDataset', module=ConcatDataset)
 
 def build_dataset(cfg):
     if cfg.type == 'ConcatDataset':
